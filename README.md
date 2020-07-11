@@ -1,5 +1,11 @@
 # Test various approaches to make a crossfaded slideshow from images
 
+It generates images with numbers and makes a slideshow, showing each image for a configurable duration then crossfade into the next.
+
+It generates a result like this:
+
+![](res.gif)
+
 ## Approach #1: ffmpeg with fade filter
 
 Based on [this method](https://superuser.com/a/834035).
