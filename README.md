@@ -16,7 +16,7 @@ Example:
 ffmpeg -y -loop 1 -t 32.5 -i /tmp/NQNMpj/0.png -loop 1 -t 32.5 -i /tmp/NQNMpj/1.png -loop 1 -t 32.5 -i /tmp/NQNMpj/2.png -filter_complex [1]fade=d=0.5:t=in:alpha=1,setpts=PTS-STARTPTS+32/TB[f0]; [2]fade=d=0.5:t=in:alpha=1,setpts=PTS-STARTPTS+64/TB[f1]; [0][f0]overlay[bg1];[bg1][f1]overlay,format=yuv420p[v] -map [v] -movflags +faststart /tmp/output/res.mp4
 ```
 
-## Approach #2: ffmpeg with xframe
+## Approach #2: ffmpeg with xfade
 
 Based on [this comment](https://www.reddit.com/r/ffmpeg/comments/f051j2/trying_to_make_video_from_images_with_crossfade/fguco1a/).
 
