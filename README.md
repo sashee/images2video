@@ -6,7 +6,7 @@ It generates a result like this:
 
 ![](res.gif)
 
-## Approach #1: ffmpeg with fade filter
+## Approach #1: ffmpeg with fade and overlay filters
 
 Based on [this method](https://superuser.com/a/834035).
 
@@ -38,6 +38,7 @@ melt /tmp/DdV4ig/0.png out=824 /tmp/DdV4ig/1.png out=824 -mix 12 -mixer luma /tm
 
 ## Usage
 
+* Make sure you have Docker installed
 * ```npm ci```
 * ```npm run run -- --images 3 --imageDuration 2 --filename res.mp4 --algo 1```
 
