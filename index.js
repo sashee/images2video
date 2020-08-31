@@ -7,7 +7,7 @@ const {argv} = require("yargs")
 	.option("algo", {
 		demandOption: true,
 		describe: "Which algo to use. 1: ffmpeg overlay, 2: ffmpeg xfade, 3: melt",
-		choices: [1, 2, 3],
+		choices: [1, 2, 3, 4],
 		type: "number",
 	})
 	.option("images", {
@@ -183,6 +183,46 @@ const generateVideoV3 = (filename) => async (sequence) => {
 	});
 };
 
+const generateVideoV4 = (filename) => async (sequence) => {
+	const crossfadetime = 0.5;
+
+	return withTempDir(async (dir) => {
+		await Promise.all(sequence.map(({image}, index) => fs.writeFile(path.join(dir, `${index}.png`), image)));
+
+		const inputs = sequence.map(({duration}, index) => {
+			return `-i ${dir}/${index}.png`;
+		}).join(" ");
+
+		const loops = sequence.map(({duration}, index) => {
+			return `[${index}]loop=${(duration + crossfadetime) * 25}:1[loop${index}]`
+		}).join(";");
+
+		const filterComplex1 = sequence.filter((_t, i) => i < sequence.length - 1).map((_v, index) => {
+			const startTime = sequence.reduce((memo, {duration}, idx) => idx > index ? memo : memo + duration, 0);
+			return `[${index === 0 ? "loop0" : `f${index}`}][loop${index + 1}]xfade=transition=fade:duration=${crossfadetime}:offset=${startTime}${index !== sequence.length - 2 ? `[f${index + 1}]`: ",format=yuv420p[v]"}`;
+		}).join(";");
+
+		await new Promise((res, rej) => {
+			console.log(["-y", ...inputs.split(" "), "-filter_complex", `${loops}${filterComplex1}`, "-map", "[v]", "-movflags", "+faststart", "-r", "25", `/tmp/output/${filename}`].join(" "))
+			const ffmpeg = spawn("ffmpeg", ["-y", ...inputs.split(" "), "-filter_complex", `${loops};${filterComplex1}`, "-map", "[v]", "-movflags", "+faststart", "-r", "25", `/tmp/output/${filename}`]);
+			ffmpeg.stderr.on("data", (data) => {
+				console.log(data.toString("utf-8"));
+			});
+			ffmpeg.stdout.on("data", (data) => {
+				console.log(data.toString("utf-8"));
+			});
+			ffmpeg.on("close", (code) => {
+				if (code === 0) {
+					res();
+				}else {
+					rej(code);
+				}
+			});
+			ffmpeg.on("error", rej);
+		});
+	});
+};
+
 ["SIGINT", "SIGTERM"].forEach((signal) => process.on(signal, () => process.exit(0)));
 
 (async () => {
@@ -203,6 +243,7 @@ const generateVideoV3 = (filename) => async (sequence) => {
 		case 1: return generateVideoV1;
 		case 2: return generateVideoV2;
 		case 3: return generateVideoV3;
+		case 4: return generateVideoV4;
 		}
 	})();
 	await algo(argv.filename)(sequence);
